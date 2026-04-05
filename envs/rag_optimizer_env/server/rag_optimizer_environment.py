@@ -5,7 +5,7 @@
 # LICENSE file in the root directory of this source tree.
 
 """
-Test Env Environment Implementation.
+Rag Optimizer Environment Implementation.
 
 A simple test environment that echoes back messages sent to it.
 Perfect for testing HTTP server infrastructure.
@@ -17,12 +17,12 @@ from openenv.core.env_server.interfaces import Environment
 from openenv.core.env_server.types import State
 
 try:
-    from models import TestAction, TestObservation
+    from models import RagOptimizerAction, RagOptimizerObservation
 except ImportError:
-    from models import TestAction, TestObservation
+    from models import RagOptimizerAction, RagOptimizerObservation
 
 
-class TestEnvironment(Environment):
+class RagOptimizerEnvironment(Environment):
     """
     A simple echo environment that echoes back messages.
 
@@ -30,11 +30,11 @@ class TestEnvironment(Environment):
     It maintains minimal state and simply echoes back whatever message it receives.
 
     Example:
-        >>> env = TestEnvironment()
+        >>> env = RagOptimizerEnvironment()
         >>> obs = env.reset()
-        >>> print(obs.echoed_message)  # "Test Env environment ready!"
+        >>> print(obs.echoed_message)  # "Rag Optimizer environment ready!"
         >>>
-        >>> obs = env.step(TestAction(message="Hello"))
+        >>> obs = env.step(RagOptimizerAction(message="Hello"))
         >>> print(obs.echoed_message)  # "Hello"
         >>> print(obs.message_length)  # 5
     """
@@ -46,36 +46,36 @@ class TestEnvironment(Environment):
     SUPPORTS_CONCURRENT_SESSIONS: bool = True
 
     def __init__(self):
-        """Initialize the test_env environment."""
+        """Initialize the rag_optimizer environment."""
         self._state = State(episode_id=str(uuid4()), step_count=0)
         self._reset_count = 0
 
-    def reset(self) -> TestObservation:
+    def reset(self) -> RagOptimizerObservation:
         """
         Reset the environment.
 
         Returns:
-            TestObservation with a ready message
+            RagOptimizerObservation with a ready message
         """
         self._state = State(episode_id=str(uuid4()), step_count=0)
         self._reset_count += 1
 
-        return TestObservation(
-            echoed_message="Test Env environment ready!",
+        return RagOptimizerObservation(
+            echoed_message="Rag Optimizer environment ready!",
             message_length=0,
             done=False,
             reward=0.0,
         )
 
-    def step(self, action: TestAction) -> TestObservation:  # type: ignore[override]
+    def step(self, action: RagOptimizerAction) -> RagOptimizerObservation:  # type: ignore[override]
         """
         Execute a step in the environment by echoing the message.
 
         Args:
-            action: TestAction containing the message to echo
+            action: RagOptimizerAction containing the message to echo
 
         Returns:
-            TestObservation with the echoed message and its length
+            RagOptimizerObservation with the echoed message and its length
         """
         self._state.step_count += 1
 
@@ -85,7 +85,7 @@ class TestEnvironment(Environment):
         # Simple reward: longer messages get higher rewards
         reward = length * 0.1
 
-        return TestObservation(
+        return RagOptimizerObservation(
             echoed_message=message,
             message_length=length,
             done=False,

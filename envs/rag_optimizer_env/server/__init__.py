@@ -4,8 +4,8 @@
 # This source code is licensed under the BSD-style license found in the
 # LICENSE file in the root directory of this source tree.
 
-"""Test Env environment server components."""
+"""Rag Optimizer environment server components."""
 
-from .rag_environment import RagEnvironment
+from .rag_optimizer_environment import RagOptimizerEnvironment
 
-__all__ = ["RagEnvironment"]
+__all__ = ["RagOptimizerEnvironment"]
