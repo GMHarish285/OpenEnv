@@ -11,6 +11,7 @@ The agent acts as a Data Engineer to un-block a broken RAG pipeline.
 
 from uuid import uuid4
 from typing import Dict, Any, List
+import os
 
 from openenv.core.env_server.interfaces import Environment
 from openenv.core.env_server.types import State
@@ -19,6 +20,15 @@ from openenv.core.env_server.types import State
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
 import numpy as np
+
+# Import RAG retrieval
+try:
+    from rag_retrieval import get_retriever
+except ImportError:
+    try:
+        from server.rag_retrieval import get_retriever
+    except ImportError:
+        get_retriever = None
 
 try:
     from models import RagOptimizerAction, RagOptimizerObservation
@@ -36,6 +46,20 @@ class RagOptimizerEnvironment(Environment):
 
     def __init__(self):
         self._state = State(episode_id=str(uuid4()), step_count=0)
+        
+        # Initialize RAG retriever if KB exists
+        self.retriever = None
+        if get_retriever is not None:
+            try:
+                self.retriever = get_retriever()
+                # Try to initialize, but don't fail if KB doesn't exist yet
+                kb_path = os.path.join(os.path.dirname(__file__), "..", "knowledge_base")
+                if os.path.exists(kb_path):
+                    self.retriever.initialize()
+                    print(f"✅ RAG retriever loaded successfully")
+            except Exception as e:
+                print(f"⚠️  RAG retriever not available: {e}")
+                self.retriever = None
         
         # Initial messy knowledge base
         self.kb = {
@@ -185,6 +209,22 @@ class RagOptimizerEnvironment(Environment):
                     else:
                         self.kb[action.doc_id]["metadata"][action.metadata_key] = action.metadata_value
                         msg = f"Added metadata to {action.doc_id}."
+            
+            elif action.action_type == "query":
+                if not action.query:
+                    msg = "Error: query text required for query action."
+                elif self.retriever is None:
+                    msg = "Error: RAG retriever not initialized. Run 'python server/build_kb.py' first."
+                else:
+                    try:
+                        # Retrieve relevant documents
+                        retrieved = self.retriever.retrieve(action.query, top_k=3)
+                        msg = f"Retrieved {len(retrieved)} documents for query: '{action.query}'\n"
+                        for i, doc in enumerate(retrieved, 1):
+                            msg += f"\n{i}. {doc['title']} (score: {doc['score']:.3f})\n"
+                            msg += f"   {doc['text'][:200]}...\n"
+                    except Exception as e:
+                        msg = f"Query failed: {str(e)}"
                         
             elif action.action_type == "submit":
                 done = True

@@ -1,4 +1,30 @@
+# ── OpenEnv Server ─────────────────────────
 openenv[core]>=0.2.0
 fastapi>=0.115.0
 uvicorn>=0.24.0
 scikit-learn>=1.3.0
+
+# ── Dataset ────────────────────────────────
+datasets
+
+# ── Knowledge Base ─────────────────────────
+chromadb
+sentence-transformers
+faiss-cpu
+
+# ── LLM (CPU inference) ─────────────────────
+llama-cpp-python
+transformers
+accelerate
+
+# ── RL Training ─────────────────────────────
+trl
+trackio
+
+# ── Hugging Face ────────────────────────────
+huggingface-hub
+
+# ── Utilities ───────────────────────────────
+torch
+numpy
+tqdm

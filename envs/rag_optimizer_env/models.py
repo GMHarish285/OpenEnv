@@ -18,7 +18,7 @@ class RagOptimizerAction(BaseModel):
     Actions the agent can take to interact with the Knowledge Base.
     """
     
-    action_type: Literal["read_document", "update_document", "delete_document", "add_metadata", "submit"] = Field(
+    action_type: Literal["read_document", "update_document", "delete_document", "add_metadata", "query", "submit"] = Field(
         ..., 
         description="The RAG optimization tool to execute."
     )
@@ -38,6 +38,10 @@ class RagOptimizerAction(BaseModel):
     metadata_value: Optional[str] = Field(
         None, 
         description="The value of the metadata tag (used for add_metadata)."
+    )
+    query: Optional[str] = Field(
+        None,
+        description="The question to answer using RAG retrieval (used for query action)."
     )
 
 
