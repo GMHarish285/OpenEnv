@@ -40,21 +40,20 @@ def main():
         print(f"Server Message: {observation.message}")
         print(f"Initial KB Stats: {len(observation.current_docs)} files loaded.\n")
         
-        history = []
+        # Conversation history so the LLM remembers previous actions
+        history = [{"role": "system", "content": SYSTEM_PROMPT}]
+        
+        # Add initial observation
+        init_obs = {
+            "server_feedback": observation.message,
+            "current_knowledge_base": observation.current_docs
+        }
+        history.append({"role": "user", "content": json.dumps(init_obs, indent=2)})
         
         for step in range(1, MAX_STEPS + 1):
             
-            # Format the observation for the LLM
-            obs_dict = {
-                "server_feedback": observation.message,
-                "current_knowledge_base": observation.current_docs
-            }
-            user_content = json.dumps(obs_dict, indent=2)
-
-            messages = [
-                {"role": "system", "content": SYSTEM_PROMPT},
-                {"role": "user", "content": user_content}
-            ]
+            # Build messages from full history
+            messages = list(history)
 
             try:
                 # Call OpenAI SDK for inference exactly like the Hackathon example
@@ -66,6 +65,17 @@ def main():
                 )
                 response_text = completion.choices[0].message.content or ""
                 action_data = json.loads(response_text)
+                # Normalize fields if model returns lists instead of strings
+                for field in ("doc_id", "text", "metadata_key", "metadata_value"):
+                    val = action_data.get(field)
+                    if isinstance(val, list):
+                        # Join if it's a list of strings, take first if list of dicts
+                        if val and isinstance(val[0], str):
+                            action_data[field] = " ".join(val)
+                        elif val and isinstance(val[0], dict):
+                            action_data[field] = json.dumps(val[0])
+                        else:
+                            action_data[field] = str(val[0]) if val else ""
                 action = RagOptimizerAction(**action_data)
                 
             except Exception as exc: 
@@ -80,8 +90,17 @@ def main():
             observation = result.observation
             reward = result.reward
 
-            print(f"  Reward Status: {reward:+.2f} | Done: {result.done} | Server: {observation.message}")
+            # Append this turn to history so the LLM remembers what it did
+            history.append({"role": "assistant", "content": json.dumps(action.model_dump(), default=str)})
+            next_obs = {
+                "server_feedback": observation.message,
+                "current_knowledge_base": observation.current_docs
+            }
+            history.append({"role": "user", "content": json.dumps(next_obs, indent=2)})
 
+            print(f"  Reward Status: {reward:+.2f} | Done: {result.done} | Server: {observation.message}")
+            print("\n")
+            
             if result.done:
                 print("\n=== EPISODE COMPLETE ===")
                 print(f"Final Hackathon Score: {reward * 100:.1f}%")
@@ -89,6 +108,7 @@ def main():
 
         else:
             print(f"Reached max steps ({MAX_STEPS}). Exiting.")
+            print(f"Final Score: {result.reward * 100:.1f}%")
 
 if __name__ == "__main__":
     main()
