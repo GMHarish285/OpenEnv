@@ -110,7 +110,7 @@ class RagOptimizerEnvironment(Environment):
             message="RagOptimizerEnv Initialized. You have messy chunks in the KB. Resolve conflicts, add metadata tags to short tickets, and splinter monolithic files to win.",
             current_docs=self._get_kb_summary(),
             done=False,
-            reward=0.0
+            reward=self._evaluate_kb()
         )
 
     def _evaluate_kb(self) -> float:
@@ -193,6 +193,9 @@ class RagOptimizerEnvironment(Environment):
                 
         except Exception as e:
             msg = f"Action failed: {str(e)}"
+
+        if not done:
+            reward = self._evaluate_kb()
 
         return RagOptimizerObservation(
             message=msg,
